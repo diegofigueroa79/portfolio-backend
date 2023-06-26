@@ -145,6 +145,8 @@ def coin_detail_historical(request, symbol, period):
         dt = datetime.now()
         dt = dt.replace(hour=0, minute=0, microsecond=0)
         dt = dt - timedelta(365)
+    else:
+        return Response([], status=status.HTTP_400_BAD_REQUEST)
 
     url = f"{os.environ['COINAPI_DOMAIN']}/v1/ohlcv/BITSTAMP_SPOT_{symbol}_USD/history?period_id={time_period}&time_start={dt.isoformat()}"
     headers = {
