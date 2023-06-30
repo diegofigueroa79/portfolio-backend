@@ -5,6 +5,7 @@ from django.shortcuts import render
 import requests as r
 import os
 from datetime import datetime, timedelta
+import calendar
 
 
 # Create your views here.
@@ -141,7 +142,7 @@ def coin_detail_historical(request, symbol, period):
         dt = dt.replace(hour=0, minute=0, microsecond=0)
         dt = dt - timedelta(30)
     elif period == 'year':
-        time_period = "1DAY"
+        time_period = "1MTH"
         dt = datetime.now()
         dt = dt.replace(hour=0, minute=0, microsecond=0)
         dt = dt - timedelta(365)
@@ -161,7 +162,30 @@ def coin_detail_historical(request, symbol, period):
         return Response([], status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     else:
         if response.ok:
+            quotes = [["period", "price_low", "price_open", "price_close", "price_high"]]
             data = response.json()
-            return Response(data=data, status=status.HTTP_200_OK)
+            for item in data:
+                timestamp = item['time_period_start']
+                dt = datetime.fromisoformat(timestamp.replace(".0000000Z", ""))
+
+                if period == 'day':
+                    item['time_period'] = dt.time().strftime("%H:%M")
+                elif period == 'month':
+                    item['time_period'] = calendar.month_abbr[dt.month] + " " + str(dt.day)
+                elif  period == 'year':
+                    item['time_period'] = calendar.month_abbr[dt.month]
+
+                quote = [
+                    item['time_period'],
+                    item['price_low'],
+                    item['price_open'],
+                    item['price_close'],
+                    item['price_high']
+                ]
+                quotes.append(quote)
+                
+            return Response(data=quotes, status=status.HTTP_200_OK)
         else:
+            print(f"Response Status Code: {response.status_code}")
+            print(f"Response Reason: {response.reason}")
             return Response([], status=status.HTTP_500_INTERNAL_SERVER_ERROR)
